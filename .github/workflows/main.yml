@@ -1,11 +1,6 @@
 name: Cuttlefish
 on:
-  push:
-    branches:
-    - master
-  pull_request:
-    branches:
-    - master
+  workflow_dispatch:
 env:
   CTEST_OUTPUT_ON_FAILURE: '1'
   GTEST_OUTPUT: xml:${{ github.workspace }}/test-results/
