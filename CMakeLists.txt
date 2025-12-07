@@ -79,6 +79,7 @@ include(cmake/config.cmake)
 include(cmake/install.cmake)
 
 add_subdirectory(lib)
+add_subdirectory(texture_encoder)
 if (CUTTLEFISH_BUILD_TOOL)
 	add_subdirectory(tool)
 endif()

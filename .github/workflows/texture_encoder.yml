@@ -1,0 +1,162 @@
+name: TextureEncoder
+on:
+  workflow_dispatch:
+
+env:
+  cmake_common_args: >-
+    -DCUTTLEFISH_FORCE_INTERNAL_FREEIMAGE=ON
+    -DCUTTLEFISH_SHARED=OFF
+    -DCUTTLEFISH_BUILD_TOOL=OFF
+    -DCUTTLEFISH_BUILD_DOCS=OFF
+    -DCUTTLEFISH_BUILD_TESTS=OFF
+  cores_count: '4'
+  ispc_version: 1.23.0
+
+jobs:
+  Windows-x64:
+    runs-on: windows-2025
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    
+    - name: Download submodules
+      run: |
+        git submodule update --init
+        curl -L https://github.com/ispc/ispc/releases/download/v${{ env.ispc_version }}/ispc-v${{ env.ispc_version }}-windows.zip -o ispc.zip
+        unzip ispc.zip
+        mv ispc-v${{ env.ispc_version }}-windows /d/ispc
+      shell: bash
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Run CMake
+      run: |
+        mkdir build
+        cd build
+        cmake ${{ env.cmake_common_args }} `
+          -DCUTTLEFISH_ISPC_PATH=D:/ispc/bin/ispc.exe -A x64 -T v143 `
+          ${{ github.workspace }}
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Build release
+      run: cmake --build . --config Release --target TextureEncoder
+      working-directory: "${{ github.workspace }}/build"
+    
+    - name: Package artifact
+      run: |
+        mkdir -p artifact
+        cp output/Release/textureencoder.dll artifact/
+      shell: bash
+      working-directory: "${{ github.workspace }}/build"
+    
+    - name: Publish artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: textureencoder-win-x64
+        path: "${{ github.workspace }}/build/artifact/"
+
+  Linux-x64:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    
+    - name: Download submodules
+      run: |
+        git submodule update --init
+        curl -L https://github.com/ispc/ispc/releases/download/v${{ env.ispc_version }}/ispc-v${{ env.ispc_version }}-linux.tar.gz -o ispc.tar.gz
+        tar xzf ispc.tar.gz
+        mv ispc-v${{ env.ispc_version }}-linux /tmp/ispc
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Build release
+      run: |
+        mkdir -p build/Release
+        cd build/Release
+        cmake -DCMAKE_BUILD_TYPE=Release ${{ env.cmake_common_args }} \
+          -DCUTTLEFISH_ISPC_PATH=/tmp/ispc/bin/ispc \
+          ${{ github.workspace }}
+        cmake --build . -j ${{ env.cores_count }} --target TextureEncoder
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Package artifact
+      run: |
+        mkdir -p artifact
+        cp output/libtextureencoder.so artifact/
+      working-directory: "${{ github.workspace }}/build/Release"
+    
+    - name: Publish artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: textureencoder-linux-x64
+        path: "${{ github.workspace }}/build/Release/artifact/"
+
+  Linux-ARM64:
+    runs-on: ubuntu-22.04-arm
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    
+    - name: Download submodules
+      run: |
+        git submodule update --init
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Build release
+      run: |
+        mkdir -p build/Release
+        cd build/Release
+        cmake -DCMAKE_BUILD_TYPE=Release ${{ env.cmake_common_args }} \
+          ${{ github.workspace }}
+        cmake --build . -j ${{ env.cores_count }} --target TextureEncoder
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Package artifact
+      run: |
+        mkdir -p artifact
+        cp output/libtextureencoder.so artifact/
+      working-directory: "${{ github.workspace }}/build/Release"
+    
+    - name: Publish artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: textureencoder-linux-arm64
+        path: "${{ github.workspace }}/build/Release/artifact/"
+
+  Mac-Universal:
+    runs-on: macos-15
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+    
+    - name: Download submodules
+      run: |
+        git submodule update --init
+        curl -L https://github.com/ispc/ispc/releases/download/v${{ env.ispc_version }}/ispc-v${{ env.ispc_version }}-macOS.universal.tar.gz -o ispc.tar.gz
+        tar xzf ispc.tar.gz
+        mv ispc-v${{ env.ispc_version }}-macOS.universal /tmp/ispc
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Run CMake
+      run: |
+        mkdir build
+        cd build
+        cmake ${{ env.cmake_common_args }} -GXcode \
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 \
+          -DCUTTLEFISH_ISPC_PATH=/tmp/ispc/bin/ispc ${{ github.workspace }}
+      working-directory: "${{ github.workspace }}"
+    
+    - name: Build release
+      run: cmake --build . --config Release --target TextureEncoder
+      working-directory: "${{ github.workspace }}/build"
+    
+    - name: Package artifact
+      run: |
+        mkdir -p artifact
+        cp output/Release/libtextureencoder.dylib artifact/
+      working-directory: "${{ github.workspace }}/build"
+    
+    - name: Publish artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: textureencoder-mac-universal
+        path: "${{ github.workspace }}/build/artifact/"
