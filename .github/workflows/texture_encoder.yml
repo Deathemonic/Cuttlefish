@@ -45,6 +45,7 @@ jobs:
       run: |
         mkdir -p artifact
         cp output/Release/textureencoder.dll artifact/
+        cp output/Release/PVRTexLib.dll artifact/ 2>/dev/null || true
       shell: bash
       working-directory: "${{ github.workspace }}/build"
     
@@ -82,6 +83,7 @@ jobs:
       run: |
         mkdir -p artifact
         cp output/libtextureencoder.so artifact/
+        cp output/libPVRTexLib.so artifact/ 2>/dev/null || true
       working-directory: "${{ github.workspace }}/build/Release"
     
     - name: Publish artifact
@@ -114,6 +116,7 @@ jobs:
       run: |
         mkdir -p artifact
         cp output/libtextureencoder.so artifact/
+        cp output/libPVRTexLib.so artifact/ 2>/dev/null || true
       working-directory: "${{ github.workspace }}/build/Release"
     
     - name: Publish artifact
@@ -153,6 +156,7 @@ jobs:
       run: |
         mkdir -p artifact
         cp output/Release/libtextureencoder.dylib artifact/
+        cp output/Release/libPVRTexLib.dylib artifact/ 2>/dev/null || true
       working-directory: "${{ github.workspace }}/build"
     
     - name: Publish artifact
